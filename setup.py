@@ -1,15 +1,20 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-    name='SCITAS Osu Benchmarks',
+    name='sbench',
     version='0.1',
-    py_modules=['sosu'],
+    py_modules=['sbench'],
+    packages=find_packages(include=['sbench']),
+    pacjage_data={
+      'sbench': ['templates/*']
+    },
     install_requires=[
         'Click',
-        'Jinja2'
+        'Jinja2',
+        'SQLAlchemy'
     ],
     entry_points='''
         [console_scripts]
-        sosu=sosu:sosu
+        sbench=sbench.commands:sbench
     '''
 )

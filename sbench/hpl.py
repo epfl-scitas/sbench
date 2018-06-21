@@ -38,7 +38,7 @@ def _get_dimensions(n):
 @preparator('hpl')
 class HPLPreparator(object):
     block_size = 256
-    memory_percent = 90
+    memory_percent = 86
 
     """Input file preparator for hpl benchmarks."""
     def __init__(self, directory, context):

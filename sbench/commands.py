@@ -86,7 +86,7 @@ test_list = {
             (2, None)
         ],
         'extra_directives': [
-            '#SBATCH --time 5:0:0'
+            '#SBATCH --time 1:0:0'
         ]
     },
 

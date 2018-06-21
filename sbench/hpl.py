@@ -1,5 +1,4 @@
 import os
-import copy
 import jinja2
 from math import sqrt
 from sqlalchemy import Column, Integer, Float, ForeignKey, String
@@ -44,22 +43,27 @@ class HPLPreparator(object):
     """Input file preparator for hpl benchmarks."""
     def __init__(self, directory, context):
         self.directory = directory
-        self.context = copy.copy(context)
+        self.context = context
 
     def prepare(self):
         input_file = os.path.join(self.directory, 'HPL.dat')
 
         target_info = targets_info[self.context['target']]
 
-        ntasks = self.context['ntasks']
-        if not ntasks:
-            ntasks = target_info['ncores'] * \
-                                  self.context['nnodes']
+        if not self.context['ntasks']:
+            self.context['ntasks'] = target_info['ncores'] * \
+                self.context['nnodes']
         mem = self.memory_percent / 100 * min(target_info['mem']) * \
             self.context['nnodes']
         mem = (int(mem * 2**20) // self.block_size) * self.block_size
 
-        self.context['P'], self.context['Q'] = _get_dimensions(ntasks)
+        if 'intel' in self.context['compiler']:
+            self.context['blas'] = 'intel-mkl'
+        else:
+            self.context['blas'] = 'openblas'
+
+        self.context['P'], self.context['Q'] = \
+            _get_dimensions(self.context['ntasks'])
         self.context['NB'] = self.block_size
         self.context['memory'] = mem
         self.context['memory_percent'] = self.memory_percent

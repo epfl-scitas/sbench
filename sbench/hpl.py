@@ -38,7 +38,7 @@ def _get_dimensions(n):
 @preparator('hpl')
 class HPLPreparator(object):
     block_size = 256
-    memory_percent = 82
+    memory_percent = 90
 
     """Input file preparator for hpl benchmarks."""
     def __init__(self, directory, context):
@@ -53,9 +53,9 @@ class HPLPreparator(object):
         if not self.context['ntasks']:
             self.context['ntasks'] = target_info['ncores'] * \
                 self.context['nnodes']
-        mem = self.memory_percent / 100 * min(target_info['mem']) * \
-            self.context['nnodes']
-        mem = (int(mem * 2**20) // self.block_size) * self.block_size
+        mem = min(target_info['mem']) * self.context['nnodes'] * 2**30 / 8
+        mem = int((self.memory_percent / 100) * sqrt(mem))
+        mem = mem // self.block_size * self.block_size
 
         if 'intel' in self.context['compiler']:
             self.context['blas'] = 'intel-mkl'

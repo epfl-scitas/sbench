@@ -1,4 +1,5 @@
 import os
+import re
 import jinja2
 from math import sqrt
 from sqlalchemy import Column, Integer, Float, ForeignKey, String
@@ -15,16 +16,47 @@ class HPLRow(Base):
     cluster = Column(String, ForeignKey('Jobs.cluster'), primary_key=True)
     jobid = Column(Integer, ForeignKey('Jobs.id'), primary_key=True)
 
-    # Size of the message in bytes
-    flops = Column(Float)
+    N = Column(Integer)
+    NB = Column(Integer)
+    P = Column(Integer)
+    Q = Column(Integer)
+    time = Column(Float)
+    gflops = Column(Float)
 
 
 @parser('hpl')
 class HPLParser(object):
+    results_regex = re.compile(r'WR\w+\s+(?P<N>\d+)\s+(?P<NB>\d+)'
+                               r'\s+(?P<P>\d+)\s+(?P<Q>\d+)'
+                               r'\s+(?P<time>[0-9.e+]+)'
+                               r'\s+(?P<gflops>[0-9.e+]+)')
+
     """Output parser for the hpl benchmarck."""
     def __init__(self, job, context):
         self.job = job
         self.context = context
+
+    def update_sql_db(self, session):
+        rows = []
+        with open(self.job.output) as f:
+            for line in f.readlines():
+                r = self.results_regex.match(line)
+                if not r:
+                    continue
+
+                kwargs = {
+                    'cluster': self.job.cluster,
+                    'jobid': self.job.id,
+                }
+                for measure in ['N', 'NB', 'P', 'Q']:
+                    kwargs[measure] = int(r.group(measure))
+
+                for measure in ['time', 'gflops']:
+                    kwargs[measure] = float(r.group(measure))
+
+                rows.append(HPLRow(**kwargs))
+
+        session.add_all(rows)
 
 
 def _get_dimensions(n):

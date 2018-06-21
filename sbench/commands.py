@@ -84,6 +84,9 @@ test_list = {
         'configurations': [
             # (nnodes, ntasks)
             (2, None)
+        ],
+        'extra_directives': [
+            '#SBATCH --time 5:0:0'
         ]
     },
 
@@ -157,11 +160,13 @@ def sbench():
 @click.option('--tests', default=None, help='Tests to be run')
 @click.option('--targets', default=None,
               help='Targets to which tests should be submitted')
+@click.option('--runner_args', default=None,
+              help='List of extra arguments for the runner')
 @click.argument(
     'directory',
     type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True)
 )
-def run(tests, targets, directory):
+def run(tests, targets, runner_args, directory):
     """Runs the specified benchmark using slurm. Puts all relevant
     files in a tree starting from the directory passed in as a
     parameter.
@@ -187,6 +192,10 @@ def run(tests, targets, directory):
 
     template = env.get_template('slurm_template.sh')
 
+    extra_args = []
+    if runner_args:
+        extra_args = runner_args.split(' ')
+
     for target in targets:
         context['target'] = target
         target_str = click.style('[{0}]'.format(target), fg='blue', bold=True)
@@ -201,8 +210,8 @@ def run(tests, targets, directory):
                 click.echo(target_str + stack_str + test_str)
 
                 context['name'] = test
-                if 'subdir' in test_list[test]:
-                    context['subdir'] = test_list[test]['subdir']
+
+                context['subdir'] = test_list[test].get('subdir', './')
                 context['command'] = test_list[test]['command']
                 context['test_template'] = test_list[test]['template']
 
@@ -244,7 +253,8 @@ def run(tests, targets, directory):
                     with open(batch_file, 'w') as f:
                         f.write(sbatch_content)
 
-                    subprocess.call(['sbatch', '--parsable', batch_file], stdout=subprocess.PIPE)
+                    subprocess.call(['sbatch', '--parsable', *extra_args, batch_file],
+                                    stdout=subprocess.PIPE)
 
 
 @sbench.command()

@@ -20,15 +20,16 @@ mpi_stacks = [
     ('intel/18.0.2', 'intel-mpi')
 ]
 
-targets_info = [
-    'E5v2',
-    'E5v3',
-    'E5v4',
-    's6g1',
-]
+targets_info = {
+    'E5v2': {'ncores': 16, 'mem': [64, 256, 512]},
+    'E5v3': {'ncores': 24, 'mem': [64]},
+    'E5v4': {'ncores': 28, 'mem': [128, 256]},
+    's6g1': {'ncores': 28, 'mem': [192]},
+}
 
 test_list = {
     'osu_bw': {
+        'template': 'slurm_osu.sh',
         'subdir': 'pt2pt',
         'command': 'osu_bw',
         'configurations': [
@@ -38,6 +39,7 @@ test_list = {
         ],
     },
     'osu_bibw': {
+        'template': 'slurm_osu.sh',
         'subdir': 'pt2pt',
         'command': 'osu_bibw',
         'configurations': [
@@ -47,6 +49,7 @@ test_list = {
         ]
     },
     'osu_latency': {
+        'template': 'slurm_osu.sh',
         'subdir': 'pt2pt',
         'command': 'osu_latency',
         'configurations': [
@@ -56,6 +59,7 @@ test_list = {
         ]
     },
     'osu_alltoall': {
+        'template': 'slurm_osu.sh',
         'subdir': 'collective',
         'command': 'osu_alltoall',
         'configurations': [
@@ -65,6 +69,7 @@ test_list = {
         ]
     },
     'osu_allreduce': {
+        'template': 'slurm_osu.sh',
         'subdir': 'collective',
         'command': 'osu_allreduce',
         'configurations': [
@@ -73,11 +78,27 @@ test_list = {
             (2, None)
         ]
     },
+    'hpl': {
+        'template': 'slurm_hpl.sh',
+        'command': 'xhpl',
+        'configurations': [
+            # (nnodes, ntasks)
+            (2, None)
+        ],
+        'extra_directives': [
+            '#SBATCH --time 1:0:0'
+        ],
+        'subdir': '.'
+    },
+
 }
 
 
 #: List of parsers
 _parsers = {}
+
+#: Lists of benchmarks preparators
+_preparators = {}
 
 
 def parser(name):
@@ -115,12 +136,19 @@ def update_sql_db(root, session):
         session.commit()
     except Exception as e:
         click.echo(
-            click.style('[WARNING]', fg='yellow', bold=True) 
+            click.style('[WARNING]', fg='yellow', bold=True)
             + ' couldn\'t process directory: {0}'.format(root)
         )
         return False
 
     return True
+
+
+def preparator(name):
+    def _decorator(cls):
+        _preparators[name] = cls
+        return cls
+    return _decorator
 
 
 @click.group()
@@ -133,19 +161,21 @@ def sbench():
 @click.option('--tests', default=None, help='Tests to be run')
 @click.option('--targets', default=None,
               help='Targets to which tests should be submitted')
+@click.option('--runner_args', default=None,
+              help='List of extra arguments for the runner')
 @click.argument(
     'directory',
     type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True)
 )
-def run(tests, targets, directory):
+def run(tests, targets, runner_args, directory):
     """Runs the specified benchmark using slurm. Puts all relevant
-    files in a tree starting from the directory passed in as a 
+    files in a tree starting from the directory passed in as a
     parameter.
     """
-    
+
     context = {}
 
-    tests = tests.split(',') if tests else list(test_list.keys())
+    tests = tests.split(',') if tests else list(test_list)
     not_existing = [x for x in tests if x not in test_list]
     if not_existing:
         msg = 'couldn\'t find the following tests: {0}'.format(', '.join(not_existing))
@@ -158,8 +188,13 @@ def run(tests, targets, directory):
         raise click.ClickException(msg)
 
     env = jinja2.Environment(loader=jinja2.PackageLoader('sbench', 'templates'))
+
     template = env.get_template('slurm_template.sh')
-    
+
+    extra_args = []
+    if runner_args:
+        extra_args = runner_args.split(' ')
+
     for target in targets:
         context['target'] = target
         target_str = click.style('[{0}]'.format(target), fg='blue', bold=True)
@@ -168,16 +203,18 @@ def run(tests, targets, directory):
             context['mpi'] = mpi
             stack_str = click.style('\t[{0}]\t[{1}]'.format(compiler, mpi), fg='green', bold=True)
             for test in tests:
-                
+
                 test_str = click.style('\t[{0}]'.format(test), fg='red')
                 click.echo(target_str + stack_str + test_str)
 
                 context['name'] = test
+
                 context['subdir'] = test_list[test]['subdir']
                 context['command'] = test_list[test]['command']
+                context['test_template'] = test_list[test]['template']
 
                 for nnodes, ntasks in test_list[test]['configurations']:
-                    
+
                     context['nnodes'] = nnodes
                     context['ntasks'] = ntasks
 
@@ -190,7 +227,11 @@ def run(tests, targets, directory):
                     context['error_file'] = os.path.join(test_directory, 'run.%A.err')
                     context['extra_directives'] = test_list[test].get('extra_directives', [])
 
-                    os.makedirs(os.path.dirname(batch_file))
+                    os.makedirs(test_directory)
+
+                    if test in _preparators:
+                        bench_prep = _preparators[test](test_directory, context)
+                        bench_prep.prepare()
 
                     # TODO: This part needs to be made more general if we start
                     # TODO: supporting more than one runner
@@ -205,8 +246,8 @@ def run(tests, targets, directory):
                     sbatch_content = template.render(**context)
                     with open(batch_file, 'w') as f:
                         f.write(sbatch_content)
-                                            
-                    subprocess.call(['sbatch', '--parsable', batch_file], stdout=subprocess.PIPE)
+
+                    subprocess.call(['sbatch', '--parsable', *extra_args, batch_file], stdout=subprocess.PIPE)
 
 
 @sbench.command()

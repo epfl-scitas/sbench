@@ -83,8 +83,7 @@ class HPLPreparator(object):
         target_info = targets_info[self.context['target']]
 
         if not self.context['ntasks']:
-            self.context['ntasks'] = target_info['ncores'] * \
-                self.context['nnodes']
+            self.context['ntasks'] = target_info['ncores'] * self.context['nnodes']
         mem = min(target_info['mem']) * self.context['nnodes'] * 2**30 / 8
         mem = int((self.memory_percent / 100) * sqrt(mem))
         mem = mem // self.block_size * self.block_size
@@ -94,14 +93,12 @@ class HPLPreparator(object):
         else:
             self.context['blas'] = 'openblas'
 
-        self.context['P'], self.context['Q'] = \
-            _get_dimensions(self.context['ntasks'])
+        self.context['P'], self.context['Q'] = _get_dimensions(self.context['ntasks'])
         self.context['NB'] = self.block_size
         self.context['memory'] = mem
         self.context['memory_percent'] = self.memory_percent
 
-        env = jinja2.Environment(
-            loader=jinja2.PackageLoader('sbench', 'templates'))
+        env = jinja2.Environment(loader=jinja2.PackageLoader('sbench', 'templates'))
 
         template = env.get_template('HPL.dat')
 

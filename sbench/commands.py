@@ -87,7 +87,8 @@ test_list = {
         ],
         'extra_directives': [
             '#SBATCH --time 1:0:0'
-        ]
+        ],
+        'subdir': '.'
     },
 
 }
@@ -174,21 +175,19 @@ def run(tests, targets, runner_args, directory):
 
     context = {}
 
-    tests = tests.split(',') if tests else list(test_list.keys())
+    tests = tests.split(',') if tests else list(test_list)
     not_existing = [x for x in tests if x not in test_list]
     if not_existing:
         msg = 'couldn\'t find the following tests: {0}'.format(', '.join(not_existing))
         raise click.ClickException(msg)
 
-    targets = targets.split(',') if targets else list(targets_info.keys())
-    not_existing = [x for x in targets if x not in targets_info.keys()]
+    targets = targets.split(',') if targets else list(targets_info)
+    not_existing = [x for x in targets if x not in targets_info]
     if not_existing:
-        msg = 'couldn\'t find the following targets: {0}'.format(
-            ', '.join(not_existing))
+        msg = 'couldn\'t find the following targets: {0}'.format(', '.join(not_existing))
         raise click.ClickException(msg)
 
-    env = jinja2.Environment(
-        loader=jinja2.PackageLoader('sbench', 'templates'))
+    env = jinja2.Environment(loader=jinja2.PackageLoader('sbench', 'templates'))
 
     template = env.get_template('slurm_template.sh')
 
@@ -202,8 +201,7 @@ def run(tests, targets, runner_args, directory):
         for compiler, mpi in mpi_stacks:
             context['compiler'] = compiler
             context['mpi'] = mpi
-            stack_str = click.style('\t[{0}]\t[{1}]'.format(compiler, mpi),
-                                    fg='green', bold=True)
+            stack_str = click.style('\t[{0}]\t[{1}]'.format(compiler, mpi), fg='green', bold=True)
             for test in tests:
 
                 test_str = click.style('\t[{0}]'.format(test), fg='red')
@@ -211,7 +209,7 @@ def run(tests, targets, runner_args, directory):
 
                 context['name'] = test
 
-                context['subdir'] = test_list[test].get('subdir', './')
+                context['subdir'] = test_list[test]['subdir']
                 context['command'] = test_list[test]['command']
                 context['test_template'] = test_list[test]['template']
 
@@ -225,18 +223,14 @@ def run(tests, targets, runner_args, directory):
                     batch_file = os.path.join(test_directory, 'slurm_batch.sh')
 
                     context['test_directory'] = test_directory
-                    context['output_file'] = os.path.join(test_directory,
-                                                          'run.%A.out')
-                    context['error_file'] = os.path.join(test_directory,
-                                                         'run.%A.err')
-                    context['extra_directives'] = \
-                        test_list[test].get('extra_directives', [])
+                    context['output_file'] = os.path.join(test_directory, 'run.%A.out')
+                    context['error_file'] = os.path.join(test_directory, 'run.%A.err')
+                    context['extra_directives'] = test_list[test].get('extra_directives', [])
 
                     os.makedirs(test_directory)
 
                     if test in _preparators:
-                        bench_prep = _preparators[test](test_directory,
-                                                        context)
+                        bench_prep = _preparators[test](test_directory, context)
                         bench_prep.prepare()
 
                     # TODO: This part needs to be made more general if we start
@@ -253,8 +247,7 @@ def run(tests, targets, runner_args, directory):
                     with open(batch_file, 'w') as f:
                         f.write(sbatch_content)
 
-                    subprocess.call(['sbatch', '--parsable', *extra_args, batch_file],
-                                    stdout=subprocess.PIPE)
+                    subprocess.call(['sbatch', '--parsable', *extra_args, batch_file], stdout=subprocess.PIPE)
 
 
 @sbench.command()

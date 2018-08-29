@@ -1,3 +1,3 @@
-from . import osu
-from . import hpl
-from . import slurm
+from . import osu  # NOQA: F401
+from . import hpl  # NOQA: F401
+from . import slurm  # NOQA: F401

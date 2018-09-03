@@ -3,6 +3,7 @@
 #SBATCH --account=scitas-ge
 #SBATCH --job-name {{ name }}
 #SBATCH --constraint={{ target }}
+#SBATCH --mem=MaxMemPerNode
 #SBATCH --nodes={{ nnodes }}
 {% if ntasks %}
 #SBATCH --ntasks={{ ntasks }}
@@ -20,7 +21,6 @@ date -R >> {{ test_directory }}/run.${SLURM_JOB_ID}.start
 env >> {{ test_directory }}/run.${SLURM_JOB_ID}.env
 
 # Execute the benchmark
-slmodules -r future
 module load {{ compiler }} {{ mpi }}
 
 {% include test_template %}

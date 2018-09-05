@@ -1,6 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH --account=scitas-ge
+#SBATCH --qos=scitas
 #SBATCH --job-name {{ name }}
 #SBATCH --constraint={{ target }}
 #SBATCH --mem=MaxMemPerNode

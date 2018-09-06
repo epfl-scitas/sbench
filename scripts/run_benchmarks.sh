@@ -1,0 +1,55 @@
+#!/bin/bash
+
+scratch_dir="/scratch/${USER}"
+
+# Create a virtual environment in a random location
+mkdir -p ${scratch_dir}/sbench/venv
+venv_dir="$(mktemp -d ${scratch_dir}/sbench/venv/py-36.XXXX)"
+
+module load gcc python
+virtualenv --version
+virtualenv --python=python3.6 ${venv_dir}
+
+# Install sbench in the virtual environment
+. ${venv_dir}/bin/activate
+pip install -e .
+
+# Set the targets of this run
+hostname="$(hostname)"
+
+if [ "${hostname}" = fidis ] ;
+then
+    target_flag="--targets=E5v4,s6g1"
+elif [ "${hostname}" = deneb2 ] ;
+then 
+    target_flag="--targets=E5v2,E5v3"
+else
+    echo "Unknown hostname ${hostname}."
+    exit 1
+fi
+
+# Run the benchmarks
+benchmarks_dir="${scratch_dir}/sbench/benchmarks/${hostname}"
+mkdir -p ${benchmarks_dir}
+
+echo SUBMITTING JOBS [$hostname]
+sbench run ${target_flag} ${benchmarks_dir}
+
+# Update the DB
+db_dir="${HOME}/benchmarks/db"
+raw_results_dir="${HOME}/benchmarks/raw"
+mkdir -p ${db_dir} && mkdir -p ${raw_results_dir}
+
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
+job_names="hpl,osu_bw,osu_bibw,osu_latency,osu_alltoall,osu_allreduce"
+job_deps=$(join_by ':' $(squeue --name=${job_names} --format="%.i" | tail -n +2))
+
+echo WAITING JOBS [$hostname]
+echo srun --dependency=afterany:${job_deps} -- sbench collect --db ${db_dir}/benchmarks.db ${benchmarks_dir}
+srun --dependency=afterany:${job_deps} -- sbench collect --db ${db_dir}/benchmarks.db ${benchmarks_dir}
+
+# Archive all the raw data
+echo ARCHIVING DATA [${hostname}]
+tar -czvf ${raw_results_dir}/benchmarks-${hostname}-$(date --rfc-3339=date).tgz --remove-files ${benchmarks_dir}/*

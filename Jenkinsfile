@@ -39,21 +39,21 @@ pipeline {
                 }
             }
         }
-    }
-    stage('Publish benchmark results') {
-        // This stage is here to process the benchmark DB and publish 
-        // the results in some form somewhere
+        stage('Publish benchmark results') {
+            // This stage is here to process the benchmark DB and publish 
+            // the results in some form somewhere
 
-        when {
-            branch 'features/jenkins_pipeline'
-        }
+            when {
+                branch 'features/jenkins_pipeline'
+            }
 
-        agent {
-	    label 'fidis-benchmark'
-        }
+            agent {
+	        label 'fidis-benchmark'
+            }
           
-        steps {
-            echo 'Results ready.'
+            steps {
+                echo 'Results ready.'
+            }
         }
     }
 }

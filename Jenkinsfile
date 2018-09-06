@@ -9,10 +9,10 @@ pipeline {
     stages {
         stage('Run benchmarks in production') {
             // This stage runs all the available benchmarks on 
-	    // both Fidis and Deneb.
-	    //
-	    // In the end it appends the results to an SQLite DB 
-	    // and archives the raw data.
+            // both Fidis and Deneb.
+            //
+            // In the end it appends the results to an SQLite DB 
+            // and archives the raw data.
             //
 
             when {
@@ -48,7 +48,7 @@ pipeline {
             branch 'features/jenkins_pipeline'
         }
 
-	agent {
+        agent {
 	    label 'fidis-benchmark'
         }
           

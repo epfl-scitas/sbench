@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 
 scratch_dir="/scratch/${USER}"
 

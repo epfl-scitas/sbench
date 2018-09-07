@@ -20,7 +20,7 @@ hostname="$(hostname)"
 if [ "${hostname}" = fidis ] ;
 then
     target_flag="--targets=E5v4,s6g1"
-elif [ "${hostname}" = deneb2 ] ;
+elif [ "${hostname}" = deneb2 ] || [ "${hostname}" = deneb1 ] ;
 then 
     target_flag="--targets=E5v2,E5v3"
 else
@@ -47,8 +47,26 @@ job_names="hpl,osu_bw,osu_bibw,osu_latency,osu_alltoall,osu_allreduce"
 job_deps=$(join_by ':' $(squeue --name=${job_names} --format="%.i" | tail -n +2))
 
 echo WAITING JOBS [$hostname]
+
+# Here we are touching a file that will be used as a
+# semaphore to indicate that we still need to wait for
+# some job to finish. This file will be deleted as the
+# final step of the process spawned in the background.
+# This is done because otherwise Jenkins (Java) will
+# timeout if the process is not producing any output
+# for 5 mins.
+touch ${benchmarks_dir}/waiting
+
+# Spawn the background process
 echo srun --dependency=afterany:${job_deps} -- sbench collect --db ${db_dir}/benchmarks.db ${benchmarks_dir}
-srun --dependency=afterany:${job_deps} -- sbench collect --db ${db_dir}/benchmarks.db ${benchmarks_dir}
+srun --dependency=afterany:${job_deps} -- sbench collect --db ${db_dir}/benchmarks.db ${benchmarks_dir} && rm ${benchmarks_dir}/waiting &
+
+# Wait for the background process to finish
+while [ -f ${benchmarks_dir}/waiting ] ;
+do
+    printf . && sleep 5
+done
+echo
 
 # Archive all the raw data
 echo ARCHIVING DATA [${hostname}]

@@ -6,6 +6,10 @@ pipeline {
         timestamps()
     }
 
+    triggers {
+        cron('H H(0-7) * * *')
+    }
+
     stages {
         stage('Run benchmarks in production') {
             // This stage runs all the available benchmarks on 

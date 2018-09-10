@@ -20,7 +20,7 @@ pipeline {
             //
 
             when {
-                branch 'features/jenkins_pipeline'
+                branch 'master'
             }
 
             parallel {
@@ -48,7 +48,7 @@ pipeline {
             // the results in some form somewhere
 
             when {
-                branch 'features/jenkins_pipeline'
+                branch 'master'
             }
 
             agent {

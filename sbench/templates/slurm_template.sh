@@ -5,6 +5,7 @@
 #SBATCH --job-name {{ name }}
 #SBATCH --constraint={{ target }}
 #SBATCH --mem=MaxMemPerNode
+#SBATCH --exclusive
 #SBATCH --nodes={{ nnodes }}
 {% if ntasks %}
 #SBATCH --ntasks={{ ntasks }}

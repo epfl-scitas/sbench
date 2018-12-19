@@ -37,9 +37,13 @@ def build_sql_query(sql_query):
     """
      
     df = pd.DataFrame(columns=sql_query['select'].split(','))
-    sql_query = "select "+sql_query['select']+" from "+sql_query['from']\
-                +" "+sql_query['join']+" where "+sql_query['where']
-    return sql_query, df
+    query = "select "+sql_query['select']+" from "+sql_query['from']\
+                +" "+sql_query['join']
+    if 'where' in sql_query:
+        query += " where "+sql_query['where']
+    if 'order' in sql_query:
+        query += " order by "+sql_query['order']
+    return query, df
 
 def db_extract(sql_query, db, df, col):
     """Extract the query specified by the string, and sort the dataframe.

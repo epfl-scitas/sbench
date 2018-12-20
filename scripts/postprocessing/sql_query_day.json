@@ -14,7 +14,6 @@
         "fontsize": "xx-small",
         "dpi": 300,
         "res": [2560,1440],
-        "title": "Jobs on 2018-09-07",
         "sort_df": ["JOBS.target","JOBS.id"]
     }
 ]

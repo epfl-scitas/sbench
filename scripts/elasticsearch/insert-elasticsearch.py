@@ -6,39 +6,47 @@ import sqlalchemy.sql as ssql
 
 SERVER = 'scitassrv16.epfl.ch'
 INDEX = 'sbench'
-TYPE = 'hpl'
 DB = '/home/scitasbench/benchmarks/db/benchmarks.db'
+TABLES = [
+    'HPL',
+    'OsuAllreduce',
+    'OsuAlltoall',
+    'OsuBandwith',
+    'OsuBidirectionalBandwith',
+    'OsuLatency',
+]
 
-def query_hpl():
+def query(table):
     engine = sqa.create_engine('sqlite:///' + DB)
     with engine.connect() as con:
         meta = sqa.MetaData(engine)
         jobs = sqa.Table('Jobs', meta, autoload=True)
-        hpl = sqa.Table('HPL', meta, autoload=True)
+        tbl = sqa.Table(table, meta, autoload=True)
 
         # filter cluster to avoid to have it twice in the results
         cols = [c for c in jobs.c if c.name != 'cluster']
-        cols.extend([c for c in hpl.c if c.name != 'jobid'])
+        cols.extend([c for c in tbl.c if c.name != 'jobid'])
 
         stm = ssql.select(cols).where(
-            ssql.and_((jobs.c.id == hpl.c.jobid),
-                      (jobs.c.cluster == hpl.c.cluster)))
+            ssql.and_((jobs.c.id == tbl.c.jobid),
+                      (jobs.c.cluster == tbl.c.cluster)))
         rs = con.execute(stm)
         a = rs.fetchall()
         return a
     return []
 
 def prepare_insert():
-    for results in query_hpl():
-        _id = '{}_{}'.format(results['cluster'], results['id'])
-        body = {
-            '_id': _id,
-            '_index': INDEX,
-            '_type': TYPE,
-            '_op_type': 'index',
-        }
-        body.update(results)
-        yield body
+    for table in TABLES:
+        for results in query(table):
+            _id = '{}_{}'.format(results['cluster'], results['id'])
+            body = {
+                '_id': _id,
+                '_index': INDEX,
+                '_type': table,
+                '_op_type': 'index',
+            }
+            body.update(results)
+            yield body
 
 
 #

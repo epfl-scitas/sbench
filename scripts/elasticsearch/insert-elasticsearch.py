@@ -39,7 +39,7 @@ def prepare_insert():
     for info in TABLES:
         _table = info['table']
         for results in query(_table):
-            _id = '_'.join([results[k] for k in info['id']])
+            _id = '_'.join([str(results[k]) for k in info['id']])
             body = {
                 '_id': _id,
                 '_index': INDEX,

@@ -8,12 +8,12 @@ SERVER = 'scitassrv16.epfl.ch'
 INDEX = 'sbench'
 DB = '/home/scitasbench/benchmarks/db/benchmarks.db'
 TABLES = [
-    'HPL',
-    'OsuAllreduce',
-    'OsuAlltoall',
-    'OsuBandwith',
-    'OsuBidirectionalBandwith',
-    'OsuLatency',
+        {'table': 'HPL',                      'id': ['cluster', 'id']},
+        {'table': 'OsuAllreduce',             'id': ['cluster', 'id', 'size']},
+        {'table': 'OsuAlltoall',              'id': ['cluster', 'id', 'size']},
+        {'table': 'OsuBandwith',              'id': ['cluster', 'id', 'size']},
+        {'table': 'OsuBidirectionalBandwith', 'id': ['cluster', 'id', 'size']},
+        {'table': 'OsuLatency',               'id': ['cluster', 'id', 'size']},
 ]
 
 def query(table):
@@ -36,13 +36,16 @@ def query(table):
     return []
 
 def prepare_insert():
-    for table in TABLES:
-        for results in query(table):
-            _id = '{}_{}'.format(results['cluster'], results['id'])
+    for info in TABLES:
+
+        _table = info['table']
+        _id = '_'.join([results[k] for k in info['id']])
+
+        for results in query(_table):
             body = {
                 '_id': _id,
                 '_index': INDEX,
-                '_type': table,
+                '_type': _table,
                 '_op_type': 'index',
             }
             body.update(results)

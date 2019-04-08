@@ -1,0 +1,4 @@
+Deps
+===
+
+pip install elasticsearch sqlalchemy

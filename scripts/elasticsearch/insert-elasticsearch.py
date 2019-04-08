@@ -54,7 +54,7 @@ def prepare_insert():
 # MAIN
 #
 if __name__ == '__main__':
-    l = open('/tmp/es_log', 'a+')
+    l = open('/tmp/es_log_jba', 'a+')
     client = Elasticsearch(hosts=SERVER)
     try:
         helpers.bulk(

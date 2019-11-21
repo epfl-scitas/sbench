@@ -5,7 +5,7 @@ from math import sqrt
 from sqlalchemy import Column, Integer, Float, ForeignKey, String
 
 from ._sql import Base
-from .commands import parser, preparator, targets_info
+from .commands import parser, preparator, clusters_info
 
 
 class HPLRow(Base):
@@ -80,11 +80,11 @@ class HPLPreparator(object):
     def prepare(self):
         input_file = os.path.join(self.directory, 'HPL.dat')
 
-        target_info = targets_info[self.context['target']]
+        cluster_info = clusters_info[self.context['cluster']]
 
         if not self.context['ntasks']:
-            self.context['ntasks'] = target_info['ncores'] * self.context['nnodes']
-        mem = min(target_info['mem']) * self.context['nnodes'] * 2**30 / 8
+            self.context['ntasks'] = cluster_info['ncores'] * self.context['nnodes']
+        mem = min(cluster_info['mem']) * self.context['nnodes'] * 2**30 / 8
         mem = int((self.memory_percent / 100) * sqrt(mem))
         mem = mem // self.block_size * self.block_size
 

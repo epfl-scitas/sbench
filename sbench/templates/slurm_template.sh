@@ -3,7 +3,9 @@
 #SBATCH --account=scitas-ge
 #SBATCH --qos=scitas
 #SBATCH --job-name {{ name }}
+{% if target %}
 #SBATCH --constraint={{ target }}
+{% endif %}
 #SBATCH --mem=MaxMemPerNode
 #SBATCH --exclusive
 #SBATCH --nodes={{ nnodes }}

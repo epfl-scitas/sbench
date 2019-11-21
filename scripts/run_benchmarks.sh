@@ -19,10 +19,13 @@ hostname="$(hostname)"
 
 if [ "${hostname}" = fidis ] ;
 then
-    target_flag="--targets=E5v4,s6g1"
-elif [ "${hostname}" = deneb2 ] || [ "${hostname}" = deneb1 ] ;
+    target_flag="--clusters=fidis,gacrux"
+elif [ "${hostname}" = helvetios ] ;
 then 
-    target_flag="--targets=E5v2,E5v3"
+    target_flag="--clusters=helvetios"
+elif [[ "${hostname}" =~ deneb[12] ]] ;
+then
+    target_flag="--clusters=deneb,eltanin"
 else
     echo "Unknown hostname ${hostname}."
     exit 1

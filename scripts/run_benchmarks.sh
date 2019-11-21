@@ -8,7 +8,7 @@ venv_dir="$(mktemp -d ${scratch_dir}/sbench/venv/py-36.XXXX)"
 
 module load gcc python
 virtualenv --version
-virtualenv --python=python3.6 ${venv_dir}
+virtualenv --python=python3 ${venv_dir}
 
 # Install sbench in the virtual environment
 . ${venv_dir}/bin/activate

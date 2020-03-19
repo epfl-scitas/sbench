@@ -26,7 +26,7 @@ mpi_stacks = {
         ('gcc/7.4.0', 'openmpi'),
         ('gcc/8.3.0', 'mvapich2'),
         ('gcc/8.3.0', 'openmpi'),
-        ('intel/18.0.2', 'intel-mpi')
+        ('intel/18.0.5', 'intel-mpi')
     ]
 }
 

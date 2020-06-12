@@ -41,15 +41,6 @@ pipeline {
                         sh  'scripts/run_benchmarks.sh'
                     }
                 }
-
-                stage('deneb') {
-                    agent {
-                        label 'deneb-benchmark'
-                    }
-                    steps {
-                        sh  'scripts/run_benchmarks.sh'
-                    }
-                }
             }
         }
         stage('Publish benchmark results') {

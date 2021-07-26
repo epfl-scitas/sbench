@@ -1,4 +1,4 @@
 Deps
 ===
 
-pip install elasticsearch sqlalchemy
+pip install elasticsearch sqlalchemy arrow

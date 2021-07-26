@@ -3,6 +3,7 @@
 from elasticsearch import Elasticsearch, helpers
 import sqlalchemy as sqa
 import sqlalchemy.sql as ssql
+import arrow
 
 SERVER = 'scitassrv16.epfl.ch'
 INDEX = 'sbench'
@@ -26,10 +27,12 @@ def query(table):
         # filter cluster to avoid to have it twice in the results
         cols = [c for c in jobs.c if c.name != 'cluster']
         cols.extend([c for c in tbl.c if c.name != 'jobid'])
+        date_from = arrow.get().shift(days=-2).format('YYYY-MM-DD HH:mm:ss.0000')
 
         stm = ssql.select(cols).where(
             ssql.and_((jobs.c.id == tbl.c.jobid),
-                      (jobs.c.cluster == tbl.c.cluster)))
+                      (jobs.c.cluster == tbl.c.cluster),
+                      (jobs.c.start > date_from)))
         rs = con.execute(stm)
         a = rs.fetchall()
         return a
